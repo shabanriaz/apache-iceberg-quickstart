@@ -1,0 +1,38 @@
+version: "3"
+
+services:
+  postgres:
+    image: postgres:13.4
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=metastore_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/hive_metastore:/var/lib/postgresql/data
+  hive-metastore:
+    image: hive-metastore:latest
+    container_name: hive-metastore
+    ports:
+      - 9083:9083
+    depends_on:
+      - postgres
+    volumes:
+      - ./hive-warehouse:/home/hive/warehouse
+    restart: on-failure
+  spark-iceberg-hive:
+    image: spark-iceberg-hive:latest
+    depends_on:
+      - postgres
+      - hive-metastore
+    container_name: spark-iceberg-hive
+    volumes:
+      - ./notebooks:/home/iceberg/notebooks/notebooks
+      - ./hive-warehouse:/home/hive/warehouse
+    ports:
+      - 8888:8888
+      - 8080:8080
+      - 18080:18080
+    restart: on-failure
